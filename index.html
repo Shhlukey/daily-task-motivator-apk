@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Micro-Task Motivator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 24px;
+        }
+
+        .task-list {
+            margin: 20px 0;
+        }
+
+        .task-item {
+            font-size: 18px;
+            color: #555;
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .task-item.completed {
+            color: #2ecc71;
+            text-decoration: line-through;
+        }
+
+        .streak {
+            font-size: 16px;
+            color: #2ecc71;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .progress-bar {
+            width: 100%;
+            background-color: #ddd;
+            border-radius: 5px;
+            height: 10px;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: #2ecc71;
+            border-radius: 5px;
+            transition: width 0.3s ease;
+        }
+
+        .premium-toggle {
+            margin: 10px 0;
+            font-size: 14px;
+        }
+
+        .premium-prompt {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #777;
+        }
+
+        .ad-space {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #eee;
+            border-radius: 5px;
+            font-size: 12px;
+            color: #555;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Daily Micro-Task Motivator</h1>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+        </div>
+        <div class="task-list" id="taskList"></div>
+        <div class="streak">Streak: <span id="streakCount">0</span> days</div>
+        <div class="premium-toggle">
+            <label><input type="checkbox" id="premiumToggle"> Enable Premium (Demo)</label>
+        </div>
+        <div class="premium-prompt">
+            Want custom tasks? <a href="#">Upgrade to Premium</a>
+        </div>
+        <div class="ad-space">
+            Ad Space: Imagine a banner ad here!
+        </div>
+    </div>
+
+    <script>
+        // Standard tasks
+        const standardTasks = [
+            "Drink a glass of water",
+            "Write one sentence in a journal",
+            "Take 10 deep breaths",
+            "Stretch for 1 minute",
+            "Organize your desk for 2 minutes",
+            "Say something kind to yourself",
+            "Walk around for 30 seconds",
+            "Read one page of a book",
+            "Do a quick sketch",
+            "Listen to a favorite song"
+        ];
+
+        // Premium tasks
+        const premiumTasks = [
+            "Meditate for 5 minutes",
+            "Plan your day in 3 steps",
+            "Learn a new word and use it",
+            "Compliment someone today",
+            "Try a new recipe (simple)"
+        ];
+
+        // Load or initialize data from localStorage
+        let streak = localStorage.getItem('streak') ? parseInt(localStorage.getItem('streak')) : 0;
+        let lastCompleted = localStorage.getItem('lastCompleted') || null;
+        let completedTasks = JSON.parse(localStorage.getItem('completedTasks')) || {};
+        const today = new Date().toDateString();
+        let isPremium = localStorage.getItem('isPremium') === 'true'; // Simulated premium status
+
+        // Display streak
+        document.getElementById('streakCount').textContent = streak;
+
+        // Premium toggle (for demo purposes)
+        const premiumToggle = document.getElementById('premiumToggle');
+        premiumToggle.checked = isPremium;
+        premiumToggle.addEventListener('change', () => {
+            isPremium = premiumToggle.checked;
+            localStorage.setItem('isPremium', isPremium);
+            location.reload(); // Reload to update tasks
+        });
+
+        // Function to get 3 random tasks
+        function getRandomTasks(taskArray) {
+            const shuffled = [...taskArray].sort(() => 0.5 - Math.random());
+            return shuffled.slice(0, 3);
+        }
+
+        // Load or generate today's tasks
+        let dailyTasks = JSON.parse(localStorage.getItem('dailyTasks')) || [];
+        if (!dailyTasks.length || lastCompleted !== today) {
+            dailyTasks = getRandomTasks(isPremium ? premiumTasks : standardTasks);
+            localStorage.setItem('dailyTasks', JSON.stringify(dailyTasks));
+            if (lastCompleted !== today) {
+                completedTasks[today] = [];
+            }
+        }
+
+        // Render tasks and update progress
+        const taskList = document.getElementById('taskList');
+        dailyTasks.forEach((task, index) => {
+            const taskDiv = document.createElement('div');
+            taskDiv.className = 'task-item';
+            taskDiv.id = `task-${index}`;
+            const taskText = document.createElement('span');
+            taskText.textContent = task;
+            const button = document.createElement('button');
+            button.textContent = 'Complete';
+            button.onclick = () => completeTask(index);
+
+            if (completedTasks[today] && completedTasks[today].includes(index)) {
+                taskDiv.classList.add('completed');
+                button.disabled = true;
+            }
+
+            taskDiv.appendChild(taskText);
+            taskDiv.appendChild(button);
+            taskList.appendChild(taskDiv);
+        });
+
+        // Update progress bar
+        const completedCount = completedTasks[today] ? completedTasks[today].length : 0;
+        document.getElementById('progressFill').style.width = `${(completedCount / 3) * 100}%`;
+
+        // Function to handle task completion
+        function completeTask(taskIndex) {
+            const now = new Date().toDateString();
+
+            if (!completedTasks[now]) {
+                completedTasks[now] = [];
+            }
+
+            if (!completedTasks[now].includes(taskIndex)) {
+                completedTasks[now].push(taskIndex);
+                localStorage.setItem('completedTasks', JSON.stringify(completedTasks));
+
+                // Update UI
+                const taskDiv = document.getElementById(`task-${taskIndex}`);
+                taskDiv.classList.add('completed');
+                taskDiv.querySelector('button').disabled = true;
+
+                // Update progress bar
+                const newCompletedCount = completedTasks[now].length;
+                document.getElementById('progressFill').style.width = `${(newCompletedCount / 3) * 100}%`;
+
+                // Check if all tasks are completed
+                if (completedTasks[now].length === 3) {
+                    const yesterday = new Date();
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    if (lastCompleted === yesterday.toDateString()) {
+                        streak++;
+                    } else if (!lastCompleted || (new Date(lastCompleted) < yesterday)) {
+                        streak = 1;
+                    }
+                    localStorage.setItem('streak', streak);
+                    localStorage.setItem('lastCompleted', now);
+                    document.getElementById('streakCount').textContent = streak;
+                    taskList.innerHTML += '<p>All tasks completed! See you tomorrow!</p>';
+                }
+            }
+        }
+
+        // Register service worker for notifications
+        if ('serviceWorker' in navigator && 'Notification' in window) {
+            navigator.serviceWorker.register('sw.js').then(reg => {
+                console.log('Service Worker registered:', reg);
+
+                // Request notification permission
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        console.log('Notification permission granted');
+                    }
+                });
+            }).catch(err => console.error('Service Worker registration failed:', err));
+        }
+    </script>
+</body>
+
+</html>
